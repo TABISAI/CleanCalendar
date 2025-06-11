@@ -1,0 +1,29 @@
+function updateHouseCleanTitles(startDate, endDate) {
+  const cleanCalendar = CalendarApp.getCalendarsByName("clean1 住吉.清掃会社(ライフブリッジ)")[0];
+  const reservationCalendar = CalendarApp.getCalendarsByName("1.TABISAI HOUSE 住吉")[0];
+  if (!cleanCalendar || !reservationCalendar) return;
+
+  const cleanEvents = cleanCalendar.getEvents(startDate, endDate).filter(event =>
+    event.isAllDayEvent() && (
+      !event.getTitle().trim() || isLateCheckoutTitle(event.getTitle())
+    )
+  );
+
+  cleanEvents.forEach(cleanEvent => {
+    const cleanDate = cleanEvent.getStartTime();
+    const reservation = findNextReservation(cleanDate, reservationCalendar);
+    if (!reservation) return;
+
+    const title = reservation.getTitle();
+    const { guests, nights } = extractGuestInfo(title);
+    const towelCount = calculateTowelCount(title, guests, nights);
+    const toothbrushCount = nights > 1 ? guests : null;
+    const hasCheckin = reservationCalendar.getEventsForDay(cleanDate).length > 0;
+
+    const newTitle =
+      getLateCheckoutPrefix(cleanEvent.getTitle()) +
+      buildCleanEventTitle("住吉", { towelCount, toothbrushCount, hasCheckin });
+
+    cleanEvent.setTitle(newTitle);
+  });
+}
