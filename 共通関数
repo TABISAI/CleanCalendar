@@ -1,0 +1,83 @@
+
+// 人数・泊数を予約タイトルから抽出
+function extractGuestInfo(title) {
+  if (!title) return { guests: null, nights: null };
+
+  // 全角数字→半角に変換（例：１泊 → 1泊）
+  title = title.replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
+
+  let guests = 0;
+
+  const adultMatch = title.match(/大人\s*[:：]?\s*(\d+)\s*名?/);
+  const childMatch = title.match(/子供\s*[:：]?\s*(\d+)\s*名?/);
+  const infantMatch = title.match(/幼児\s*[:：]?\s*(\d+)\s*名?/);
+
+  if (adultMatch || childMatch || infantMatch) {
+    guests += adultMatch ? parseInt(adultMatch[1]) : 0;
+    guests += childMatch ? parseInt(childMatch[1]) : 0;
+    guests += infantMatch ? parseInt(infantMatch[1]) : 0;
+  } else {
+    const simpleMatch = title.match(/(\d+)\s*名/);
+    guests = simpleMatch ? parseInt(simpleMatch[1]) : null;
+  }
+
+  const nightMatch = title.match(/(\d+)\s*泊/);
+  const nights = nightMatch ? parseInt(nightMatch[1]) : null;
+
+  return { guests, nights };
+}
+
+
+// タオル枚数（最大32枚 or 手動指定）
+function calculateTowelCount(title, guests, nights) {
+  const towelMatch = title.match(/(?:タオル|T)[:：]?\s*(\d+)\s*枚?/i);
+  if (towelMatch) return parseInt(towelMatch[1]);
+
+  if (guests && nights) {
+    let effectiveNights = nights;
+    while (guests * effectiveNights > 32 && effectiveNights > 0) {
+      effectiveNights--;
+    }
+    return guests * effectiveNights;
+  }
+  return null;
+}
+
+// 次の予約を探す（最大7日先まで）
+function findNextReservation(cleanDate, reservationCalendar, maxOffset = 7) {
+  for (let offset = 0; offset <= maxOffset; offset++) {
+    const checkDate = new Date(cleanDate);
+    checkDate.setDate(cleanDate.getDate() + offset);
+    const reservations = reservationCalendar.getEventsForDay(checkDate);
+    if (reservations.length > 0) return reservations[0];
+  }
+  return null;
+}
+
+// レイトチェックアウト判定
+function isLateCheckoutTitle(title) {
+  return /^(11[じ時]\s*(レイト)?アウト|(?:レイト)?アウト\s*11[じ時])$/i.test(title.trim());
+}
+
+// レイト表記をそのままプレフィックスとして返す
+function getLateCheckoutPrefix(title) {
+  return isLateCheckoutTitle(title) ? title.trim() + " " : "";
+}
+
+// 清掃タイトルを作成
+function buildCleanEventTitle(facilityName, { towelCount, toothbrushCount, hasCheckin, singleBeds }) {
+  let parts = [facilityName];
+
+  if (typeof singleBeds === "number" && singleBeds > 0) {
+    parts.push(`S${singleBeds}`);
+  }
+  if (typeof towelCount === "number") {
+    parts.push(`T${towelCount}`);
+  }
+  if (typeof toothbrushCount === "number") {
+    parts.push(`H${toothbrushCount}`);
+  }
+  parts.push(hasCheckin ? "インあり" : "インなし");
+
+  return parts.join(" ");
+}
