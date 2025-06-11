@@ -1,0 +1,32 @@
+function updateTerraceCleanTitles(startDate, endDate) {
+  const cleanCalendar = CalendarApp.getCalendarsByName("clean5 美野島.清掃会社(ライフブリッジ)")[0];
+  const reservationCalendar = CalendarApp.getCalendarsByName("5.TABISAI TERRACE 美野島")[0];
+  if (!cleanCalendar || !reservationCalendar) return;
+
+  const cleanEvents = cleanCalendar.getEvents(startDate, endDate).filter(event =>
+    event.isAllDayEvent() && (
+      !event.getTitle().trim() || isLateCheckoutTitle(event.getTitle())
+    )
+  );
+
+  cleanEvents.forEach(cleanEvent => {
+    const cleanDate = cleanEvent.getStartTime();
+    const reservation = findNextReservation(cleanDate, reservationCalendar);
+    if (!reservation) return;
+
+    const title = reservation.getTitle();
+    const { guests, nights } = extractGuestInfo(title);
+    const towelCount = calculateTowelCount(title, guests, nights);
+    const toothbrushCount = nights > 1 ? guests : null;
+    const hasCheckin = reservationCalendar.getEventsForDay(cleanDate).length > 0;
+
+    // 🛏️ 美野島のシングルベッドルール
+    const singleBeds = guests >= 9 ? 1 : 0;
+
+    const newTitle =
+      getLateCheckoutPrefix(cleanEvent.getTitle()) +
+      buildCleanEventTitle("美野島", { towelCount, toothbrushCount, hasCheckin, singleBeds });
+
+    cleanEvent.setTitle(newTitle);
+  });
+}
