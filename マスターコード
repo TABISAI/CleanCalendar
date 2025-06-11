@@ -1,0 +1,26 @@
+function autoRunAllClean() {
+  const today = new Date();
+
+  // 🔸来週月曜を取得（1週間後の月曜日）
+  const startDate = new Date(today);
+  startDate.setDate(startDate.getDate() + (8 - today.getDay())); // 月曜 = 1（0 が日曜）
+
+  // 🔸再来週日曜を取得（来週月曜 + 6日）
+  const endDate = new Date(startDate);
+  endDate.setDate(startDate.getDate() + 6);
+
+  Logger.log(`🧹 処理期間：${formatDate(startDate)}〜${formatDate(endDate)}`);
+
+  updateHouseCleanTitles(startDate, endDate);
+  updatePremiumCleanTitles(startDate, endDate);
+  updateTerraceCleanTitles(startDate, endDate);
+  updateSuiteCleanTitles(startDate, endDate);
+  updateLuxeCleanTitles(startDate, endDate);
+  updateGrandeCleanTitles(startDate, endDate);
+  updateLunonCleanTitles(startDate, endDate);
+  updateSwellCleanTitles(startDate, endDate);
+}
+
+function formatDate(date) {
+  return Utilities.formatDate(date, Session.getScriptTimeZone(), "yyyy/MM/dd");
+}
