@@ -1,0 +1,36 @@
+function resetCleanTitlesInRange() {
+  const facilityCalendars = [
+    "clean1 住吉.清掃会社(ライフブリッジ)",
+    "clean2 祇園.清掃会社(ライフブリッジ)",
+    "clean3 冷泉.清掃会社(ライフブリッジ)",
+    "clean4 綱場.清掃会社(ライフブリッジ)",
+    "clean5 美野島.清掃会社(ライフブリッジ)",
+    "clean6 駅南.清掃会社(ライフブリッジ)",
+    "clean7 清川.清掃会社(ライフブリッジ)",
+    "clean8 高砂.清掃会社(ライフブリッジ)"
+  ];
+
+  // ✅ 期間を指定
+  const startDate = new Date("2025-05-07");
+  const endDate = new Date("2025-05-12");
+
+  facilityCalendars.forEach(name => {
+    const cal = CalendarApp.getCalendarsByName(name)[0];
+    if (!cal) {
+      Logger.log(`⚠️ カレンダーが見つかりません: ${name}`);
+      return;
+    }
+
+    const events = cal.getEvents(startDate, endDate);
+    let count = 0;
+
+    events.forEach(event => {
+      if (event.isAllDayEvent()) {
+        event.setTitle("");  // タイトルだけ初期化
+        count++;
+      }
+    });
+
+    Logger.log(`✅ ${name} の初期化完了：${count} 件の清掃依頼タイトルを空にしました`);
+  });
+}
